@@ -165,6 +165,16 @@ const pickZone = (opts, frameBounds, targetBounds, size) => {
       w: t.x,
       h: f.y2,
     },
+    // Add a centered zone
+    {
+      side: "start",
+      standing: "left",
+      flow: "row",
+      order: -1,
+      w: f.w,
+      h: f.h,
+      centered: true,
+    },
   ]
 
   /* Order the zones by the amount of popup that would be cut out if that zone is used.
@@ -221,6 +231,17 @@ const pickZone = (opts, frameBounds, targetBounds, size) => {
 /* TODO Document this. */
 
 const calcRelPos = (zone, masterBounds, slaveSize) => {
+  // Center when too large
+  if (zone.centered) {
+    return {
+      crossLength: slaveSize.w,
+      mainLength: slaveSize.h,
+      x: Math.round((zone.w - slaveSize.w) / 2),
+      x2: Math.round((zone.w - slaveSize.w) / 2) + slaveSize.w,
+      y: Math.round((zone.h - slaveSize.h) / 2),
+      y2: Math.round((zone.h - slaveSize.h) / 2) + slaveSize.h,
+    }
+  }
   const { main, cross } = axes[zone.flow]
   /* TODO: The slave is hard-coded to align cross-center with master. */
   const crossAlign = "center"

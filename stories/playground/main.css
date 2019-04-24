@@ -47,6 +47,14 @@ html {
   background: hsl(346, 80%, 50%);
 }
 
+.small {
+    padding: 1rem;
+}
+
+.big {
+    padding: 10rem;
+}
+
 /* Demo Controls */
 
 form {

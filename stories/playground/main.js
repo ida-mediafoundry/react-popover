@@ -26,6 +26,7 @@ class Main extends React.Component {
     popoverIsOpen: false,
     preferPlace: null,
     place: null,
+    size: "small",
   }
   togglePopover(toState) {
     debug("togglePopover")
@@ -39,6 +40,11 @@ class Main extends React.Component {
     const preferPlace =
       event.target.value === "null" ? null : event.target.value
     this.setState({ preferPlace })
+  }
+  changeSize(event) {
+    this.setState({
+      size: event.target.value,
+    })
   }
   changePlace(event) {
     const place = event.target.value === "null" ? null : event.target.value
@@ -81,10 +87,12 @@ class Main extends React.Component {
       preferPlace: this.state.preferPlace,
       place: this.state.place,
       onOuterAction: () => this.togglePopover(false),
-      body: [
-        <h1 key="a">Popover Title</h1>,
-        <div key="b">Popover contents</div>,
-      ],
+      body: (
+        <div className={this.state.size}>
+          <h1 key="a">Popover Title</h1>,
+          <div key="b">Popover contents</div>
+        </div>
+      ),
     }
 
     const controls = (
@@ -96,6 +104,11 @@ class Main extends React.Component {
         <label htmlFor="place">place </label>
         <select id="place" onChange={e => this.changePlace(e)}>
           {createPreferPlaceOptions(Layout)}
+        </select>
+        <label htmlFor="size">size </label>
+        <select id="size" onChange={e => this.changeSize(e)}>
+          <option value="small">Small</option>
+          <option value="big">Big</option>
         </select>
       </form>
     )

@@ -182,55 +182,58 @@ class Popover extends React.Component {
     /* Constrain containerEl Position within frameEl. Try not to penetrate a visually-pleasing buffer from
     frameEl. `frameBuffer` length is based on tipSize and its offset. */
 
-    const frameBuffer = this.props.tipSize + this.props.offset
-    const hangingBufferLength =
-      dockingEdgeBufferLength * 2 + this.props.tipSize * 2 + frameBuffer
-    const frameCrossStart = this.frameBounds[axis.cross.start]
-    const frameCrossEnd = this.frameBounds[axis.cross.end]
-    const frameCrossLength = this.frameBounds[axis.cross.size]
-    const frameCrossInnerLength = frameCrossLength - frameBuffer * 2
-    const frameCrossInnerStart = frameCrossStart + frameBuffer
-    const frameCrossInnerEnd = frameCrossEnd - frameBuffer
-    const popoverCrossStart = pos[axis.cross.start]
-    const popoverCrossEnd = pos[axis.cross.end]
+    if (!zone.centered) {
+      const frameBuffer = this.props.tipSize + this.props.offset
+      const hangingBufferLength =
+        dockingEdgeBufferLength * 2 + this.props.tipSize * 2 + frameBuffer
+      const frameCrossStart = this.frameBounds[axis.cross.start]
+      const frameCrossEnd = this.frameBounds[axis.cross.end]
+      const frameCrossLength = this.frameBounds[axis.cross.size]
+      const frameCrossInnerLength = frameCrossLength - frameBuffer * 2
+      const frameCrossInnerStart = frameCrossStart + frameBuffer
+      const frameCrossInnerEnd = frameCrossEnd - frameBuffer
+      const popoverCrossStart = pos[axis.cross.start]
+      const popoverCrossEnd = pos[axis.cross.end]
 
-    /* If the popover dose not fit into frameCrossLength then just position it to the `frameCrossStart`.
+      /* If the popover dose not fit into frameCrossLength then just position it to the `frameCrossStart`.
     popoverCrossLength` will now be forced to overflow into the `Frame` */
-    if (pos.crossLength > frameCrossLength) {
-      log("popoverCrossLength does not fit frame.")
-      pos[axis.cross.start] = 0
+      if (pos.crossLength > frameCrossLength) {
+        log("popoverCrossLength does not fit frame.")
+        pos[axis.cross.start] = 0
 
-      /* If the `popoverCrossStart` is forced beyond some threshold of `targetCrossLength` then bound
+        /* If the `popoverCrossStart` is forced beyond some threshold of `targetCrossLength` then bound
     it (`popoverCrossStart`). */
-    } else if (tb[axis.cross.end] < hangingBufferLength) {
-      log("popoverCrossStart cannot hang any further without losing target.")
-      pos[axis.cross.start] = tb[axis.cross.end] - hangingBufferLength
+      } else if (tb[axis.cross.end] < hangingBufferLength) {
+        log("popoverCrossStart cannot hang any further without losing target.")
+        pos[axis.cross.start] = tb[axis.cross.end] - hangingBufferLength
 
-      /* checking if the cross start of the target area is within the frame and it makes sense
+        /* checking if the cross start of the target area is within the frame and it makes sense
     to try fitting popover into the frame. */
-    } else if (tb[axis.cross.start] > frameCrossInnerEnd) {
-      log("popoverCrossStart cannot hang any further without losing target.")
-      pos[axis.cross.start] = tb[axis.cross.start] - this.size[axis.cross.size]
+      } else if (tb[axis.cross.start] > frameCrossInnerEnd) {
+        log("popoverCrossStart cannot hang any further without losing target.")
+        pos[axis.cross.start] =
+          tb[axis.cross.start] - this.size[axis.cross.size]
 
-      /* If the `popoverCrossStart` does not fit within the inner frame (honouring buffers) then
+        /* If the `popoverCrossStart` does not fit within the inner frame (honouring buffers) then
     just center the popover in the remaining `frameCrossLength`. */
-    } else if (pos.crossLength > frameCrossInnerLength) {
-      log("popoverCrossLength does not fit within buffered frame.")
-      pos[axis.cross.start] = (frameCrossLength - pos.crossLength) / 2
-    } else if (popoverCrossStart < frameCrossInnerStart) {
-      log("popoverCrossStart cannot reverse without exceeding frame.")
-      pos[axis.cross.start] = frameCrossInnerStart
-    } else if (popoverCrossEnd > frameCrossInnerEnd) {
-      log("popoverCrossEnd cannot travel without exceeding frame.")
-      pos[axis.cross.start] =
-        pos[axis.cross.start] - (pos[axis.cross.end] - frameCrossInnerEnd)
-    }
+      } else if (pos.crossLength > frameCrossInnerLength) {
+        log("popoverCrossLength does not fit within buffered frame.")
+        pos[axis.cross.start] = (frameCrossLength - pos.crossLength) / 2
+      } else if (popoverCrossStart < frameCrossInnerStart) {
+        log("popoverCrossStart cannot reverse without exceeding frame.")
+        pos[axis.cross.start] = frameCrossInnerStart
+      } else if (popoverCrossEnd > frameCrossInnerEnd) {
+        log("popoverCrossEnd cannot travel without exceeding frame.")
+        pos[axis.cross.start] =
+          pos[axis.cross.start] - (pos[axis.cross.end] - frameCrossInnerEnd)
+      }
 
-    /* So far the link position has been calculated relative to the target. To calculate the absolute
+      /* So far the link position has been calculated relative to the target. To calculate the absolute
     position we need to factor the `Frame``s scroll position */
 
-    pos[axis.cross.start] += scrollSize.cross
-    pos[axis.main.start] += scrollSize.main
+      pos[axis.cross.start] += scrollSize.cross
+      pos[axis.main.start] += scrollSize.main
+    }
 
     /* Apply `flow` and `order` styles. This can impact subsequent measurements of height and width
     of the container. When tip changes orientation position due to changes from/to `row`/`column`
@@ -255,32 +258,37 @@ class Popover extends React.Component {
 
     /* Calculate Tip Position */
 
-    let tipCrossPos =
-      /* Get the absolute tipCrossCenter. Tip is positioned relative to containerEl
+    if (zone.centered) {
+      this.tipEl.style.display = "none"
+    } else {
+      let tipCrossPos =
+        /* Get the absolute tipCrossCenter. Tip is positioned relative to containerEl
       but it aims at targetCenter which is positioned relative to frameEl... we
       need to cancel the containerEl positioning so as to hit our intended position. */
-      Layout.centerOfBoundsFromBounds(zone.flow, "cross", tb, pos) +
-      /* centerOfBounds does not account for scroll so we need to manually add that
+        Layout.centerOfBoundsFromBounds(zone.flow, "cross", tb, pos) +
+        /* centerOfBounds does not account for scroll so we need to manually add that
       here. */
-      scrollSize.cross -
-      /* Center tip relative to self. We do not have to calcualte half-of-tip-size since tip-size
+        scrollSize.cross -
+        /* Center tip relative to self. We do not have to calcualte half-of-tip-size since tip-size
       specifies the length from base to tip which is half of total length already. */
-      this.props.tipSize
+        this.props.tipSize
 
-    if (tipCrossPos < dockingEdgeBufferLength)
-      tipCrossPos = dockingEdgeBufferLength
-    else if (
-      tipCrossPos >
-      pos.crossLength - dockingEdgeBufferLength - this.props.tipSize * 2
-    ) {
-      tipCrossPos =
+      if (tipCrossPos < dockingEdgeBufferLength)
+        tipCrossPos = dockingEdgeBufferLength
+      else if (
+        tipCrossPos >
         pos.crossLength - dockingEdgeBufferLength - this.props.tipSize * 2
-    }
+      ) {
+        tipCrossPos =
+          pos.crossLength - dockingEdgeBufferLength - this.props.tipSize * 2
+      }
 
-    this.tipEl.style.transform = `${
-      flowToTipTranslations[zone.flow]
-    }(${tipCrossPos}px)`
-    this.tipEl.style[jsprefix("Transform")] = this.tipEl.style.transform
+      this.tipEl.style.display = "block"
+      this.tipEl.style.transform = `${
+        flowToTipTranslations[zone.flow]
+      }(${tipCrossPos}px)`
+      this.tipEl.style[jsprefix("Transform")] = this.tipEl.style.transform
+    }
   }
   checkTargetReposition = () => {
     if (this.measureTargetBounds()) this.resolvePopoverLayout()
