@@ -1,6 +1,8 @@
 import { window } from "./platform"
 import { equalRecords, find } from "./utils"
 
+const IS_IE11 = !!window.MSInputMethodContext && !!document.documentMode
+
 /* Axes System
 
 This allows us to at-will work in a different orientation
@@ -83,10 +85,23 @@ El.calcBounds = el => {
   }
 }
 
-El.calcSize = el =>
-  el === window
-    ? { w: el.innerWidth, h: el.innerHeight }
-    : { w: el.offsetWidth, h: el.offsetHeight }
+El.calcSize = el => {
+  if (el === window) {
+    return { w: el.innerWidth, h: el.innerHeight }
+  }
+
+  if (IS_IE11) {
+    const body = el.querySelector(".Popover-body")
+    if (
+      body.offsetWidth > el.offsetWidth ||
+      body.offsetHeight > el.offsetHeight
+    ) {
+      return { w: body.offsetWidth, h: body.offsetHeight }
+    }
+  }
+
+  return { w: el.offsetWidth, h: el.offsetHeight }
+}
 
 El.calcScrollSize = el =>
   el === window
@@ -171,25 +186,25 @@ const pickZone = (opts, frameBounds, targetBounds, size) => {
       standing: "left",
       flow: "row",
       order: -1,
-      w: f.w,
-      h: f.h,
+      w: window.innerWidth,
+      h: window.innerHeight,
       centered: true,
     },
   ]
+    .map(zone =>
+      Object.assign({}, zone, {
+        cutOff:
+          -Math.max(0, Math.min(zone.w, size.w)) *
+          Math.max(0, Math.min(zone.h, size.h)),
+      }),
+    )
+    .sort((a, b) => a.cutOff - b.cutOff)
 
   /* Order the zones by the amount of popup that would be cut out if that zone is used.
      The first one in the array is the one that cuts the least amount.
 
      const area = size.w * size.h  // Popup area is constant and it does not change the order
   */
-  zones.forEach(z => {
-    // TODO Update to satisfy linter
-    // eslint-disable-next-line no-param-reassign
-    z.cutOff =
-      /* area */ -Math.max(0, Math.min(z.w, size.w)) *
-      Math.max(0, Math.min(z.h, size.h))
-  })
-  zones.sort((a, b) => a.cutOff - b.cutOff)
 
   const availZones = zones.filter(zone => doesFitWithin(zone, size))
 
